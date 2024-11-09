@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ channel.name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Channel Header -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold">{{ channel.name }}</h1>
+                    <p class="text-gray-600">{{ channel.description }}</p>
+                </div>
+                {% if member and member.is_admin %}
+                <div class="flex space-x-2">
+                    <button onclick="document.getElementById('inviteModal').classList.remove('hidden')"
+                            class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Invite Users
+                    </button>
+                    <button onclick="document.getElementById('settingsModal').classList.remove('hidden')"
+                            class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                        Channel Settings
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div id="messages" class="h-96 overflow-y-auto p-4">
+                {% for message in messages %}
+<div class="mb-4">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+  <img class="h-10 w-10 rounded-full"
+     src="{{ url_for('uploaded_file', filename=member.profile_picture) if member and member.profile_picture else 'https://via.placeholder.com/40' }}"
+     alt="">
+
+        </div>
+        <div class="ml-3">
+            <p class="text-sm font-medium text-gray-900">
+                {{ message.username }}
+                <span class="text-xs text-gray-500">
+                    {{ message.created_at.strftime('%Y-%m-%d %H:%M') }}
+                </span>
+            </p>
+            <p class="text-sm text-gray-700">{{ message.content }}</p>
+            {% if message.filename %}
+            <div class="mt-2">
+                <a href="{{ url_for('uploaded_file', filename=message.filename) }}"
+                   class="text-blue-500 hover:underline">
+                    📎 {{ message.filename }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+            </div>
+
+            <!-- Message Input -->
+            <div class="border-t p-4">
+                <form action="{{ url_for('channel_message', channel_id=channel.id) }}" method="POST" enctype="multipart/form-data">
+                    <div class="flex space-x-2">
+                        <input type="text" name="content" required placeholder="Type your message..."
+                               class="flex-1 px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                        <label class="cursor-pointer bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
+                            📎
+                            <input type="file" name="file" class="hidden">
+                        </label>
+                        <button type="submit"
+                                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Modal -->
+    <div id="inviteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">Invite Users</h2>
+            <p class="mb-4">Share this invite link with users:</p>
+            <div class="flex space-x-2 mb-4">
+                <input type="text" readonly value="{{ url_for('join_channel', invite_code=channel.invite_code, _external=True) }}"
+                       class="flex-1 px-3 py-2 border rounded bg-gray-50">
+                <button onclick="copyInviteLink()"
+                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Copy
+                </button>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="document.getElementById('inviteModal').classList.add('hidden')"
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">Channel Settings</h2>
+            <form action="{{ url_for('update_channel', channel_id=channel.id) }}" method="POST">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Channel Name</label>
+                    <input type="text" name="name" value="{{ channel.name }}" required
+                           class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Description</label>
+                    <textarea name="description" rows="3"
+                              class="w-full px-3 py-2 border rounded focus:outline-none focus:border-blue-500">{{ channel.description }}</textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="is_private" {% if channel.is_private %}checked{% endif %}
+                               class="mr-2">
+                        Private Channel
+                    </label>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button"
+                            onclick="document.getElementById('settingsModal').classList.add('hidden')"
+                            class="mr-2 px-4 py-2 text-gray-600 hover:text-gray-800">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    const socket = io();
+
+    // Join channel room
+    const channelId = {{ channel.id }};
+    socket.emit('join_channel', { channel_id: channelId });
+
+    // Listen for new messages
+    socket.on('new_message', function(message) {
+        const messageContainer = document.createElement('div');
+        messageContainer.classList.add('mb-4');
+
+        messageContainer.innerHTML = `
+            <div class="flex items-start">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-900">
+                        ${message.username}
+                        <span class="text-xs text-gray-500">${message.created_at}</span>
+                    </p>
+                    <p class="text-sm text-gray-700">${message.content}</p>
+                    ${message.filename ? `<a href="/uploads/${message.filename}" class="text-blue-500 hover:underline">📎 ${message.filename}</a>` : ''}
+                </div>
+            </div>
+        `;
+        document.getElementById('messages').appendChild(messageContainer);
+        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+    });
+
+
+    function copyInviteLink() {
+        const inviteLink = document.querySelector('#inviteModal input');
+        inviteLink.select();
+        document.execCommand('copy');
+        alert('Invite link copied to clipboard!');
+    }
+
+    // Scroll to bottom of messages on load
+    document.addEventListener('DOMContentLoaded', function() {
+        const messages = document.getElementById('messages');
+        messages.scrollTop = messages.scrollHeight;
+    });
+
+    </script>
+</body>
+</html>
