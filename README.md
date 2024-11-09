@@ -30,7 +30,7 @@ How to install:
 
 - Install requirements
 
-``` python3 install -r requirement.txt ```
+``` pip install -r requirement.txt ```
 
 - Launch main file
 
